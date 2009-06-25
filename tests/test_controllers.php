@@ -12,6 +12,10 @@ class CommentsController extends Controller {
 	function delete() {
 
 	}
+	
+	function _secret_method() {
+		
+	}
 }
 
 class PostsController extends Controller {
