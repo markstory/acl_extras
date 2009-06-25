@@ -5,13 +5,13 @@
  * Enhances the existing Acl Shell with a few handy functions
  *
  * Copyright 2008, Mark Story.
- * 823 millwood rd. 
- * toronto, ontario M4G 1W3
+ * 694B The Queensway 
+ * toronto, ontario M8Y 1K9
  *
  * Licensed under The MIT License
  * Redistributions of files must retain the above copyright notice.
  *
- * @copyright Copyright 2008, Mark Story.
+ * @copyright Copyright 2008-2009, Mark Story.
  * @link http://mark-story.com
  * @version 0.5.1
  * @author Mark Story <mark@mark-story.com>
@@ -20,6 +20,7 @@
 
 App::import('Core', 'Shell');
 App::import('Model', 'DbAcl');
+App::import('Core', 'Controller');
 
 if (!defined('DISABLE_AUTO_DISPATCH')) {
 	define('DISABLE_AUTO_DISPATCH', true);
@@ -39,6 +40,7 @@ foreach ($pluginPaths as $path) {
 		require($file);
 	}
 }
+
 if (!class_exists('AclExtrasShell')) {
 	die('Could not load AclExtras Shell Quitting');
 }
@@ -50,10 +52,13 @@ Mock::generatePartial(
 
 Mock::generatePartial(
 	'AclExtrasShell', 'MockAclExtrasShell',
-	array('in', 'hr', 'out', 'err', 'createFile', '_stop')
+	array('in', 'hr', 'out', 'err', 'createFile', '_stop', 'getControllerList')
 );
 
 Mock::generate('Aco', 'MockAco', array('children', 'verify', 'recover'));
+
+//import test controller class names.
+include dirname(dirname(dirname(__FILE__))) . DS . 'test_controllers.php';
 
 /**
  * AclExtras Shell Test case
@@ -126,4 +131,50 @@ class AclExtrasShellTestCase extends CakeTestCase {
 		$this->Task->expectAt(0, 'in', array(new PatternExpectation('/valid/')));
 		$this->Task->verify();
 	}
+
+/**
+ * test startup
+ *
+ * @return void
+ **/
+	function testStartup() {
+		$this->assertEqual($this->Task->Acl, null);
+		$this->Task->startup();
+		$this->assertTrue(is_a($this->Task->Acl, 'AclComponent'));
+	}
+
+/**
+ * Test aco_update method.
+ *
+ * @return void
+ **/
+	function testAcoUpdate() {
+		$tableName = $this->db->fullTableName('acos');
+		$this->db->execute('TRUNCATE ' . $tableName);
+		$this->Task->setReturnValue('getControllerList', array('Comments', 'Posts', 'BigLongNames'));
+		$this->Task->startup();
+		$this->Task->aco_update();
+
+		$Aco = $this->Task->Acl->Aco;
+
+		$result = $Aco->node('controllers/Comments');
+		$this->assertEqual($result[0]['Aco']['alias'], 'Comments');
+
+		$result = $Aco->children($result[0]['Aco']['id']);
+		$this->assertEqual(count($result), 3);
+		$this->assertEqual($result[0]['Aco']['alias'], 'add');
+		$this->assertEqual($result[1]['Aco']['alias'], 'index');
+		$this->assertEqual($result[2]['Aco']['alias'], 'delete');
+
+		$result = $Aco->node('controllers/Posts');
+		$this->assertEqual($result[0]['Aco']['alias'], 'Posts');
+		$result = $Aco->children($result[0]['Aco']['id']);
+		$this->assertEqual(count($result), 3);
+
+		$result = $Aco->node('controllers/BigLongNames');
+		$this->assertEqual($result[0]['Aco']['alias'], 'BigLongNames');
+		$result = $Aco->children($result[0]['Aco']['id']);
+		$this->assertEqual(count($result), 4);
+	}
+
 }

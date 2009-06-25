@@ -1,29 +1,31 @@
 <?php
 /**
  * Acl Extras Shell.
- * 
+ *
  * Enhances the existing Acl Shell with a few handy functions
  *
  * Copyright 2008, Mark Story.
- * 823 millwood rd. 
- * toronto, ontario M4G 1W3
+ * 694B The Queensway
+ * toronto, ontario M8Y 1K9
  *
  * Licensed under The MIT License
  * Redistributions of files must retain the above copyright notice.
  *
- * @copyright Copyright 2008, Mark Story.
+ * @copyright Copyright 2008-2009, Mark Story.
  * @link http://mark-story.com
  * @version 0.5.1
  * @author Mark Story <mark@mark-story.com>
  * @license http://www.opensource.org/licenses/mit-license.php The MIT License
  */
+
 App::import('Component', 'Acl');
 App::import('Model', 'DbAcl');
+
 /**
- * Shell for ACO sync
+ * Shell for ACO extras
  *
- * @package		cake
- * @subpackage	cake.cake.console.libs
+ * @package		acl_extras
+ * @subpackage	acl_extras.vendors.shells
  */
 class AclExtrasShell extends Shell {
 /**
@@ -33,6 +35,7 @@ class AclExtrasShell extends Shell {
  * @access public
  */
 	var $Acl;
+
 /**
  * Contains arguments parsed from the command line.
  *
@@ -40,6 +43,7 @@ class AclExtrasShell extends Shell {
  * @access public
  */
 	var $args;
+
 /**
  * Contains database source to use
  *
@@ -47,33 +51,33 @@ class AclExtrasShell extends Shell {
  * @access public
  */
 	var $dataSource = 'default';
-	
+
 /**
  * Root node name.
  *
  * @var string
  **/
 	var $rootNode = 'controllers';
-	
+
 /**
  * Internal Clean Actions switch
  *
  * @var boolean
  **/
 	var $_clean = false;
-	
+
 /**
  * Start up And load Acl Component / Aco model
  *
  * @return void
- **/	
+ **/
 	function startup() {
 		$this->Acl =& new AclComponent();
 		$controller = null;
 		$this->Acl->startup($controller);
 		$this->Aco =& $this->Acl->Aco;
 	}
-	
+
 /**
  * Override main() for help message hook
  *
@@ -91,24 +95,24 @@ class AclExtrasShell extends Shell {
 	}
 
 /**
- * undocumented function
+ * Updates the Aco Tree with new controller actions.
  *
  * @return void
  **/
 	function aco_update() {
 		$root = $this->_checkNode($this->rootNode, $this->rootNode, null);
 		App::import('Core', array('Controller'));
-		
-		$Controllers = Configure::listObjects('controller');
+
+		$Controllers = $this->getControllerList();
 		$appIndex = array_search('App', $Controllers);
-		if ($appIndex !== false	) {
+		if ($appIndex !== false) {
 			unset($Controllers[$appIndex]);
 		}
 		// look at each controller in app/controllers
 		foreach ($Controllers as $ctrlName) {
 			App::import('Controller', $ctrlName);
 			// find / make controller node
-			$controllerNode = $this->_checkNode($this->rootNode .'/'.$ctrlName, $ctrlName, $root['Aco']['id']);
+			$controllerNode = $this->_checkNode($this->rootNode . '/' . $ctrlName, $ctrlName, $root['Aco']['id']);
 			$this->_checkMethods($ctrlName, $controllerNode, $this->_clean);
 		}
 		if ($this->_clean) {
@@ -127,7 +131,16 @@ class AclExtrasShell extends Shell {
 		$this->out(__('Aco Update Complete', true));
 		return true;
 	}
-	
+
+/**
+ * Get a list of controllers in the app. Wraps Configure::listObjects() for testing
+ *
+ * @return array
+ **/
+	function getControllerList() {
+		return Configure::listObjects('controller');
+	}
+
 /**
  * Sync the ACO table
  *
@@ -141,9 +154,9 @@ class AclExtrasShell extends Shell {
 /**
  * Check a node for existance, create it if it doesn't exist.
  *
- * @param string $path 
- * @param string $alias 
- * @param int $parentId 
+ * @param string $path
+ * @param string $alias
+ * @param int $parentId
  * @return array Aco Node array
  */
 	function _checkNode($path, $alias, $parentId = null) {
@@ -151,20 +164,20 @@ class AclExtrasShell extends Shell {
 		if (!$node) {
 			$this->Aco->create(array('parent_id' => $parentId, 'model' => null, 'alias' => $alias));
 			$node = $this->Aco->save();
-			$node['Aco']['id'] = $this->Aco->id; 
+			$node['Aco']['id'] = $this->Aco->id;
 			$this->out(sprintf(__('Created Aco node: %s', true), $path));
 		} else {
 			$node = $node[0];
 		}
 		return $node;
 	}
-	
+
 /**
  * Check and Add/delete controller Methods
  *
- * @param string $controller 
- * @param array $node 
- * @param bool $cleanup 
+ * @param string $controller
+ * @param array $node
+ * @param bool $cleanup
  * @return void
  */
 	function _checkMethods($controller, $node, $cleanup = false) {
@@ -193,8 +206,8 @@ class AclExtrasShell extends Shell {
 		}
 		return true;
 	}
-	
-	
+
+
 /**
  * Show help screen.
  *
@@ -207,19 +220,19 @@ class AclExtrasShell extends Shell {
 
 		$commands = array(
 			'update' => "\tcake acl_extras aco_update\n" .
-						"\t\t" . __("Add new ACOs for new controllers and actions", true) . "\n" . 
-						"\t\t" . __("Create new ACO's for controllers and their actions. Does not remove any nodes from ACO table", true), 
+						"\t\t" . __("Add new ACOs for new controllers and actions", true) . "\n" .
+						"\t\t" . __("Create new ACO's for controllers and their actions. Does not remove any nodes from ACO table", true),
 
-			'sync' =>	"\tcake acl_extras aco_sync\n" . 
+			'sync' =>	"\tcake acl_extras aco_sync\n" .
 						"\t\tPerform a full sync on the ACO table.\n" .
 						"\t\t" . __("Creates new ACO's for missing controllers and actions. Removes orphaned entries in the ACO table.", true) . "\n",
-			
+
 			'verify' => "\tcake acl_extras verify \$type\n" .
 						"\t\t" . __('Verify the tree structure of either your Aco or Aro Trees', true),
-			
+
 			'recover' => "\tcake acl_extras recover \$type\n" .
 						 "\t\t" . __('Recover a corrupted Tree', true),
-						
+
 			'help' => 	"\thelp [<command>]\n" .
 						"\t\t" . __("Displays this help message, or a message on a specific command.", true) . "\n"
 		);
@@ -258,7 +271,7 @@ class AclExtrasShell extends Shell {
 /**
  * Recover an Acl Tree
  *
- * @param string $type The Type of Acl Node to recover 
+ * @param string $type The Type of Acl Node to recover
  * @access public
  * @return void
  */
