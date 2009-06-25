@@ -1,11 +1,11 @@
 <?php
 /**
  * Acl Extras Shell.
- * 
+ *
  * Enhances the existing Acl Shell with a few handy functions
  *
  * Copyright 2008, Mark Story.
- * 694B The Queensway 
+ * 694B The Queensway
  * toronto, ontario M8Y 1K9
  *
  * Licensed under The MIT License
@@ -144,15 +144,23 @@ class AclExtrasShellTestCase extends CakeTestCase {
 	}
 
 /**
+ * clean fixtures and setup mock
+ *
+ * @return void
+ **/
+	function _cleanAndSetup() {
+		$tableName = $this->db->fullTableName('acos');
+		$this->db->execute('TRUNCATE ' . $tableName);
+		$this->Task->setReturnValue('getControllerList', array('Comments', 'Posts', 'BigLongNames'));
+		$this->Task->startup();
+	}
+/**
  * Test aco_update method.
  *
  * @return void
  **/
 	function testAcoUpdate() {
-		$tableName = $this->db->fullTableName('acos');
-		$this->db->execute('TRUNCATE ' . $tableName);
-		$this->Task->setReturnValue('getControllerList', array('Comments', 'Posts', 'BigLongNames'));
-		$this->Task->startup();
+		$this->_cleanAndSetup();
 		$this->Task->aco_update();
 
 		$Aco = $this->Task->Acl->Aco;
@@ -177,4 +185,77 @@ class AclExtrasShellTestCase extends CakeTestCase {
 		$this->assertEqual(count($result), 4);
 	}
 
+/**
+ * test syncing of Aco records
+ *
+ * @return void
+ **/
+	function testAcoSyncRemoveMethods() {
+		$this->_cleanAndSetup();
+		$this->Task->aco_update();
+
+		$Aco = $this->Task->Acl->Aco;
+		$Aco->cacheQueries = false;
+
+		$result = $Aco->node('controllers/Comments');
+		$new = array(
+			'parent_id' => $result[0]['Aco']['id'],
+			'alias' => 'some_method'
+		);
+		$Aco->create($new);
+		$Aco->save();
+		$children = $Aco->children($result[0]['Aco']['id']);
+		$this->assertEqual(count($children), 4);
+		
+		$this->Task->aco_sync();
+		$children = $Aco->children($result[0]['Aco']['id']);
+		$this->assertEqual(count($children), 3);
+
+		$method = $Aco->node('controllers/Commments/some_method');
+		$this->assertFalse($method);
+	}
+
+/**
+ * test adding methods with aco_update
+ *
+ * @return void
+ **/
+	function testAcoUpdateAddingMethods() {
+		$this->_cleanAndSetup();
+		$this->Task->aco_update();
+
+		$Aco = $this->Task->Acl->Aco;
+		$Aco->cacheQueries = false;
+
+		$result = $Aco->node('controllers/Comments');
+		$children = $Aco->children($result[0]['Aco']['id']);
+		$this->assertEqual(count($children), 3);
+
+		$Aco->del($children[0]['Aco']['id']);
+		$Aco->del($children[1]['Aco']['id']);
+		$this->Task->aco_update();
+		
+		$children = $Aco->children($result[0]['Aco']['id']);
+		$this->assertEqual(count($children), 3);
+	}
+
+/**
+ * test adding controllers on sync
+ *
+ * @return void
+ **/
+	function testAddingControllers() {
+		$this->_cleanAndSetup();
+		$this->Task->aco_update();
+
+		$Aco = $this->Task->Acl->Aco;
+		$Aco->cacheQueries = false;
+
+		$result = $Aco->node('controllers/Comments');
+		$Aco->del($result[0]['Aco']['id']);
+
+		$this->Task->aco_update();
+		$newResult = $Aco->node('controllers/Comments');
+		$this->assertNotEqual($newResult[0]['Aco']['id'], $result[0]['Aco']['id']);
+	}
 }
