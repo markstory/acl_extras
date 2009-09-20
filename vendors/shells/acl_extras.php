@@ -265,7 +265,7 @@ class AclExtrasShell extends Shell {
 		if ($return === true) {
 			$this->out(__('Tree is valid and strong', true));
 		} else {
-			$this->out(print_r($return));
+			$this->out(print_r($return, true));
 		}
 	}
 /**
@@ -288,6 +288,5 @@ class AclExtrasShell extends Shell {
 			$this->out(__('Tree recovery failed.', true));
 		}
 	}
-
 }
 ?>

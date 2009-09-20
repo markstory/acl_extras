@@ -111,9 +111,11 @@ class AclExtrasShellTestCase extends CakeTestCase {
 		$this->Task->startup();
 		$this->Task->args = array('Aco');
 		$this->Task->Acl->Aco = new MockAco();
-
+		$this->Task->Acl->Aco->setReturnValue('recover', true);
 		$this->Task->Acl->Aco->expectOnce('recover');
-		$this->Task->expectAt(0, 'in', array(new PatternExpectation('/recovered/')));
+
+		$this->Task->expectOnce('out');
+		$this->Task->expectAt(0, 'out', array(new PatternExpectation('/recovered/')));
 		$this->Task->recover();
 	}
 
@@ -126,9 +128,11 @@ class AclExtrasShellTestCase extends CakeTestCase {
 		$this->Task->startup();
 		$this->Task->args = array('Aco');
 		$this->Task->Acl->Aco = new MockAco();
-
+		$this->Task->Acl->Aco->setReturnValue('verify', true);
 		$this->Task->Acl->Aco->expectOnce('verify');
-		$this->Task->expectAt(0, 'in', array(new PatternExpectation('/valid/')));
+
+		$this->Task->expectOnce('out');
+		$this->Task->expectAt(0, 'out', array(new PatternExpectation('/valid/')));
 		$this->Task->verify();
 	}
 
@@ -206,7 +210,7 @@ class AclExtrasShellTestCase extends CakeTestCase {
 		$Aco->save();
 		$children = $Aco->children($result[0]['Aco']['id']);
 		$this->assertEqual(count($children), 4);
-		
+
 		$this->Task->aco_sync();
 		$children = $Aco->children($result[0]['Aco']['id']);
 		$this->assertEqual(count($children), 3);
@@ -234,7 +238,7 @@ class AclExtrasShellTestCase extends CakeTestCase {
 		$Aco->del($children[0]['Aco']['id']);
 		$Aco->del($children[1]['Aco']['id']);
 		$this->Task->aco_update();
-		
+
 		$children = $Aco->children($result[0]['Aco']['id']);
 		$this->assertEqual(count($children), 3);
 	}
