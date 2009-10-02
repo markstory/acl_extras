@@ -138,7 +138,7 @@ class AclExtrasShell extends Shell {
  * @return array
  **/
 	function getControllerList() {
-		return Configure::listObjects('controller');
+		return Configure::listObjects('controller', null, false);
 	}
 
 /**
