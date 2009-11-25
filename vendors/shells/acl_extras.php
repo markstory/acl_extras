@@ -112,7 +112,8 @@ class AclExtrasShell extends Shell {
 		foreach ($Controllers as $ctrlName) {
 			App::import('Controller', $ctrlName);
 			// find / make controller node
-			$controllerNode = $this->_checkNode($this->rootNode . '/' . $ctrlName, $ctrlName, $root['Aco']['id']);
+			$path = str_replace('.','/',$ctrlName);
+			$controllerNode = $this->_checkNode($this->rootNode . '/' . $path, $path, $root['Aco']['id']);
 			$this->_checkMethods($ctrlName, $controllerNode, $this->_clean);
 		}
 		if ($this->_clean) {
@@ -133,12 +134,24 @@ class AclExtrasShell extends Shell {
 	}
 
 /**
- * Get a list of controllers in the app. Wraps Configure::listObjects() for testing
+ * Get a list of controllers in the app and plugins
  *
  * @return array
  **/
 	function getControllerList() {
-		return Configure::listObjects('controller', null, false);
+		$result = App::objects('controller', null, false);
+		$plugins = App::objects('plugin',null,false);
+		foreach ($plugins as $plugin) {
+			$path = App::pluginPath($plugin) . 'controllers';
+			$controllers = App::objects('controller',$path,false);
+			foreach ($controllers as $controller) {
+				if ($controller == $plugin.'App') {
+					continue;
+				}
+				$result[] = $plugin . '.' . $controller;
+			}
+		}
+		return $result;
 	}
 
 /**
@@ -181,6 +194,12 @@ class AclExtrasShell extends Shell {
  * @return void
  */
 	function _checkMethods($controller, $node, $cleanup = false) {
+		$plugin = null;
+		if (strpos($controller,'.') !== false) {
+			$parts = explode('.',$controller);
+			$controller = array_pop($parts);
+			$plugin = array_shift($parts) . '/';
+		}
 		$className = $controller . 'Controller';
 		$baseMethods = get_class_methods('Controller');
 		$actions = get_class_methods($className);
@@ -189,7 +208,7 @@ class AclExtrasShell extends Shell {
 			if (strpos($action, '_', 0) === 0) {
 				continue;
 			}
-			$this->_checkNode($this->rootNode . '/' . $controller . '/' . $action, $action, $node['Aco']['id']);
+			$this->_checkNode($this->rootNode . '/' . $plugin . $controller . '/' . $action, $action, $node['Aco']['id']);
 		}
 		if ($cleanup) {
 			$actionNodes = $this->Aco->children($node['Aco']['id']);
