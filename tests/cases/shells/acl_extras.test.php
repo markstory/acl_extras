@@ -13,7 +13,6 @@
  *
  * @copyright Copyright 2008-2009, Mark Story.
  * @link http://mark-story.com
- * @version 0.5.1
  * @author Mark Story <mark@mark-story.com>
  * @license http://www.opensource.org/licenses/mit-license.php The MIT License
  */

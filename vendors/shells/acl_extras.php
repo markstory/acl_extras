@@ -11,13 +11,13 @@
  * Licensed under The MIT License
  * Redistributions of files must retain the above copyright notice.
  *
- * @copyright Copyright 2008-2009, Mark Story.
+ * @copyright Copyright 2008-2010, Mark Story.
  * @link http://mark-story.com
- * @version 0.5.1
  * @author Mark Story <mark@mark-story.com>
  * @license http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
+App::import('Core', 'Controller');
 App::import('Component', 'Acl');
 App::import('Model', 'DbAcl');
 
@@ -101,30 +101,31 @@ class AclExtrasShell extends Shell {
  **/
 	function aco_update() {
 		$root = $this->_checkNode($this->rootNode, $this->rootNode, null);
-		App::import('Core', array('Controller'));
 
-		$Controllers = $this->getControllerList();
-		$appIndex = array_search('App', $Controllers);
+		$controllers = $this->getControllerList();
+		$appIndex = array_search('App', $controllers);
 		if ($appIndex !== false) {
-			unset($Controllers[$appIndex]);
+			unset($controllers[$appIndex]);
 		}
 		// look at each controller in app/controllers
-		foreach ($Controllers as $ctrlName) {
-			App::import('Controller', $ctrlName);
+		foreach ($controllers as $controllerPath => $controllerName) {
+			App::import('Controller', $controllerName);
 			// find / make controller node
-			$path = str_replace('.','/',$ctrlName);
-			$controllerNode = $this->_checkNode($this->rootNode . '/' . $path, $path, $root['Aco']['id']);
-			$this->_checkMethods($ctrlName, $controllerNode, $this->_clean);
+			$path = $this->rootNode . '/' . $controllerPath;
+			$controllerNode = $this->_checkNode($path, $controllerPath, $root['Aco']['id']);
+			$this->_checkMethods($controllerName, $controllerNode, $this->_clean);
 		}
 		if ($this->_clean) {
 			$this->Aco->id = $root['Aco']['id'];
 			$controllerNodes = $this->Aco->children(null, true);
-			$ctrlFlip = array_flip($Controllers);
 			foreach ($controllerNodes as $ctrlNode) {
-				if (!isset($ctrlFlip[$ctrlNode['Aco']['alias']])) {
+				if (!isset($controllers[$ctrlNode['Aco']['alias']])) {
 					$this->Aco->id = $ctrlNode['Aco']['id'];
 					if ($this->Aco->delete()) {
-						$this->out(sprintf(__('Deleted %s and all children', true), $this->rootNode . '/' . $ctrlNode['Aco']['alias']));
+						$this->out(sprintf(
+							__('Deleted %s and all children', true), 
+							$this->rootNode . '/' . $ctrlNode['Aco']['alias']
+						));
 					}
 				}
 			}
@@ -134,21 +135,25 @@ class AclExtrasShell extends Shell {
 	}
 
 /**
- * Get a list of controllers in the app and plugins
+ * Get a list of controllers in the app and plugins.
+ *
+ * Returns an array of path => import notation.
  *
  * @return array
  **/
 	function getControllerList() {
 		$result = App::objects('controller', null, false);
-		$plugins = App::objects('plugin',null,false);
+		$result = array_combine(array_values($result), array_values($result));
+
+		$plugins = App::objects('plugin', null, false);
 		foreach ($plugins as $plugin) {
 			$path = App::pluginPath($plugin) . 'controllers';
-			$controllers = App::objects('controller',$path,false);
+			$controllers = App::objects('controller', $path, false);
 			foreach ($controllers as $controller) {
-				if ($controller == $plugin.'App') {
+				if ($controller == $plugin . 'App') {
 					continue;
 				}
-				$result[] = $plugin . '.' . $controller;
+				$result[$plugin . '/' . $controller] = $plugin . '.' . $controller;
 			}
 		}
 		return $result;
@@ -194,11 +199,9 @@ class AclExtrasShell extends Shell {
  * @return void
  */
 	function _checkMethods($controller, $node, $cleanup = false) {
-		$plugin = null;
-		if (strpos($controller,'.') !== false) {
-			$parts = explode('.',$controller);
-			$controller = array_pop($parts);
-			$plugin = array_shift($parts) . '/';
+		list($plugin, $controller) = pluginSplit($controller);
+		if ($plugin) {
+			$plugin .= '/';
 		}
 		$className = $controller . 'Controller';
 		$baseMethods = get_class_methods('Controller');
