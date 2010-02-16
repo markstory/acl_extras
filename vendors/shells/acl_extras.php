@@ -95,50 +95,72 @@ class AclExtrasShell extends Shell {
 	}
 
 /**
+ * Sync the ACO table
+ *
+ * @return void
+ **/
+	function aco_sync() {
+		$this->_clean = true;
+		$this->aco_update();
+	}
+/**
  * Updates the Aco Tree with new controller actions.
  *
  * @return void
  **/
 	function aco_update() {
+		$root = $this->_checkNode($this->rootNode, $this->rootNode, null);
 		$controllers = $this->getControllerList();
-		$this->_updateControllers($controllers);
-/*
+		$this->_updateControllers($root, $controllers);
+
 		$plugins = App::objects('plugin', null, false);
 		foreach ($plugins as $plugin) {
-			$path = App::pluginPath($plugin) . 'controllers';
-			$controllers = App::objects('controller', $path, false);
-			$this->_updateControllers($controllers, $plugin);
+			$controllers = $this->getControllerList($plugin);
+
+			$path = $this->rootNode . '/' . $plugin;
+			$pluginRoot = $this->_checkNode($path, $plugin, $root['Aco']['id']);
+			$this->_updateControllers($pluginRoot, $controllers, $plugin);
 		}
-*/
+		$this->out(__('Aco Update Complete', true));
 		return true;
 	}
 
 /**
  * Updates a collection of controllers.
  *
+ * @param array $root Array or ACO information for root node.
  * @param array $controllers Array of Controllers
  * @param string $plugin Name of the plugin you are making controllers for.
  * @return void
  */
-	function _updateControllers($controllers, $plugin = null) {
-		$root = $this->_checkNode($this->rootNode, $this->rootNode, null);
-		$appIndex = array_search('App', $controllers);
+	function _updateControllers($root, $controllers, $plugin = null) {
+		$appIndex = array_search($plugin . 'App', $controllers);
 		if ($appIndex !== false) {
 			unset($controllers[$appIndex]);
 		}
+		$dotPlugin = $pluginPath = $plugin;
+		if ($plugin) {
+			$dotPlugin .= '.';
+			$pluginPath .= '/';
+		}
 		// look at each controller
-		foreach ($controllers as $controllerPath => $controllerName) {
-			App::import('Controller', $controllerName);
-			// find / make controller node
-			$path = $this->rootNode . '/' . $controllerPath;
-			$controllerNode = $this->_checkNode($path, $controllerPath, $root['Aco']['id']);
-			$this->_checkMethods($controllerName, $controllerNode, $this->_clean);
+		foreach ($controllers as $controllerName) {
+			App::import('Controller', $dotPlugin . $controllerName);
+
+			$path = $this->rootNode . '/' . $pluginPath . $controllerName;
+			$controllerNode = $this->_checkNode($path, $controllerName, $root['Aco']['id']);
+			$this->_checkMethods($controllerName, $controllerNode, $pluginPath);
 		}
 		if ($this->_clean) {
+			if (!$plugin) {
+				$controllers = array_merge($controllers, App::objects('plugin', null, false));
+			}
+			$controllerFlip = array_flip($controllers);
+
 			$this->Aco->id = $root['Aco']['id'];
 			$controllerNodes = $this->Aco->children(null, true);
 			foreach ($controllerNodes as $ctrlNode) {
-				if (!isset($controllers[$ctrlNode['Aco']['alias']])) {
+				if (!isset($controllerFlip[$ctrlNode['Aco']['alias']])) {
 					$this->Aco->id = $ctrlNode['Aco']['id'];
 					if ($this->Aco->delete()) {
 						$this->out(sprintf(
@@ -149,7 +171,6 @@ class AclExtrasShell extends Shell {
 				}
 			}
 		}
-		$this->out(__('Aco Update Complete', true));
 	}
 
 /**
@@ -161,19 +182,13 @@ class AclExtrasShell extends Shell {
  * @return array
  **/
 	function getControllerList($plugin = null) {
-		$result = App::objects('controller', null, false);
-		$result = array_combine(array_values($result), array_values($result));
-		return $result;
-	}
-
-/**
- * Sync the ACO table
- *
- * @return void
- **/
-	function aco_sync() {
-		$this->_clean = true;
-		$this->aco_update();
+		if (!$plugin) {
+			$controllers = App::objects('controller', null, false);
+		} else {
+			$pluginPath = App::pluginPath($plugin);
+			$controllers = App::objects('controller', $pluginPath . 'controllers' . DS, false);
+		}
+		return $controllers;
 	}
 
 /**
@@ -185,7 +200,6 @@ class AclExtrasShell extends Shell {
  * @return array Aco Node array
  */
 	function _checkNode($path, $alias, $parentId = null) {
-		$this->out($path);
 		$node = $this->Aco->node($path);
 		if (!$node) {
 			$this->Aco->create(array('parent_id' => $parentId, 'model' => null, 'alias' => $alias));
@@ -203,14 +217,10 @@ class AclExtrasShell extends Shell {
  *
  * @param string $controller
  * @param array $node
- * @param bool $cleanup
+ * @param string $plugin Name of plugin 
  * @return void
  */
-	function _checkMethods($controller, $node, $cleanup = false) {
-		list($plugin, $controller) = pluginSplit($controller);
-		if ($plugin) {
-			$plugin .= '/';
-		}
+	function _checkMethods($controller, $node, $pluginPath = false) {
 		$className = $controller . 'Controller';
 		$baseMethods = get_class_methods('Controller');
 		$actions = get_class_methods($className);
@@ -219,9 +229,11 @@ class AclExtrasShell extends Shell {
 			if (strpos($action, '_', 0) === 0) {
 				continue;
 			}
-			$this->_checkNode($this->rootNode . '/' . $plugin . $controller . '/' . $action, $action, $node['Aco']['id']);
+			$path = $this->rootNode . '/' . $pluginPath . $controller . '/' . $action;
+			$this->_checkNode($path, $action, $node['Aco']['id']);
 		}
-		if ($cleanup) {
+
+		if ($this->_clean) {
 			$actionNodes = $this->Aco->children($node['Aco']['id']);
 			$methodFlip = array_flip($methods);
 			foreach ($actionNodes as $action) {
