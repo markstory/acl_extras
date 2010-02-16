@@ -100,14 +100,33 @@ class AclExtrasShell extends Shell {
  * @return void
  **/
 	function aco_update() {
-		$root = $this->_checkNode($this->rootNode, $this->rootNode, null);
-
 		$controllers = $this->getControllerList();
+		$this->_updateControllers($controllers);
+/*
+		$plugins = App::objects('plugin', null, false);
+		foreach ($plugins as $plugin) {
+			$path = App::pluginPath($plugin) . 'controllers';
+			$controllers = App::objects('controller', $path, false);
+			$this->_updateControllers($controllers, $plugin);
+		}
+*/
+		return true;
+	}
+
+/**
+ * Updates a collection of controllers.
+ *
+ * @param array $controllers Array of Controllers
+ * @param string $plugin Name of the plugin you are making controllers for.
+ * @return void
+ */
+	function _updateControllers($controllers, $plugin = null) {
+		$root = $this->_checkNode($this->rootNode, $this->rootNode, null);
 		$appIndex = array_search('App', $controllers);
 		if ($appIndex !== false) {
 			unset($controllers[$appIndex]);
 		}
-		// look at each controller in app/controllers
+		// look at each controller
 		foreach ($controllers as $controllerPath => $controllerName) {
 			App::import('Controller', $controllerName);
 			// find / make controller node
@@ -131,7 +150,6 @@ class AclExtrasShell extends Shell {
 			}
 		}
 		$this->out(__('Aco Update Complete', true));
-		return true;
 	}
 
 /**
@@ -139,23 +157,12 @@ class AclExtrasShell extends Shell {
  *
  * Returns an array of path => import notation.
  *
+ * @param string $plugin Name of plugin to get controllers for
  * @return array
  **/
-	function getControllerList() {
+	function getControllerList($plugin = null) {
 		$result = App::objects('controller', null, false);
 		$result = array_combine(array_values($result), array_values($result));
-
-		$plugins = App::objects('plugin', null, false);
-		foreach ($plugins as $plugin) {
-			$path = App::pluginPath($plugin) . 'controllers';
-			$controllers = App::objects('controller', $path, false);
-			foreach ($controllers as $controller) {
-				if ($controller == $plugin . 'App') {
-					continue;
-				}
-				$result[$plugin . '/' . $controller] = $plugin . '.' . $controller;
-			}
-		}
 		return $result;
 	}
 
@@ -178,6 +185,7 @@ class AclExtrasShell extends Shell {
  * @return array Aco Node array
  */
 	function _checkNode($path, $alias, $parentId = null) {
+		$this->out($path);
 		$node = $this->Aco->node($path);
 		if (!$node) {
 			$this->Aco->create(array('parent_id' => $parentId, 'model' => null, 'alias' => $alias));
