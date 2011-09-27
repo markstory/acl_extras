@@ -17,9 +17,9 @@
  * @license http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-App::import('Core', 'Controller');
-App::import('Component', 'Acl');
-App::import('Model', 'DbAcl');
+App::uses('ComponentCollection', 'Controller');
+App::uses('AclComponent', 'Controller/Component');
+App::uses('DbAcl', 'Model');
 
 /**
  * Shell for ACO extras
@@ -42,7 +42,7 @@ class AclExtrasShell extends Shell {
  * @var array
  * @access public
  */
-	var $args;
+	public $args;
 
 /**
  * Contains database source to use
@@ -50,32 +50,34 @@ class AclExtrasShell extends Shell {
  * @var string
  * @access public
  */
-	var $dataSource = 'default';
+	public $dataSource = 'default';
 
 /**
  * Root node name.
  *
  * @var string
  **/
-	var $rootNode = 'controllers';
+	public $rootNode = 'controllers';
 
 /**
  * Internal Clean Actions switch
  *
  * @var boolean
  **/
-	var $_clean = false;
+	public $_clean = false;
 
 /**
  * Start up And load Acl Component / Aco model
  *
  * @return void
  **/
-	function startup() {
-		$this->Acl =& new AclComponent();
+	public function startup() {
+		parent::startup();
+		$collection = new ComponentCollection();
+		$this->Acl = new AclComponent($collection);
 		$controller = null;
 		$this->Acl->startup($controller);
-		$this->Aco =& $this->Acl->Aco;
+		$this->Aco = $this->Acl->Aco;
 	}
 
 /**
@@ -144,12 +146,15 @@ class AclExtrasShell extends Shell {
 			$pluginPath .= '/';
 		}
 		// look at each controller
-		foreach ($controllers as $controllerName) {
-			App::import('Controller', $dotPlugin . $controllerName);
-
+		foreach ($controllers as $controllerClassName) {
+			App::uses($controllerClassName, $dotPlugin.'Controller');
+			
+			$this->{$controllerClassName} = new $controllerClassName;
+			$controllerName = $this->{$controllerClassName}->name;
 			$path = $this->rootNode . '/' . $pluginPath . $controllerName;
+
 			$controllerNode = $this->_checkNode($path, $controllerName, $root['Aco']['id']);
-			$this->_checkMethods($controllerName, $controllerNode, $pluginPath);
+			$this->_checkMethods($controllerClassName, $controllerName, $controllerNode, $pluginPath);
 		}
 		if ($this->_clean) {
 			if (!$plugin) {
@@ -183,10 +188,10 @@ class AclExtrasShell extends Shell {
  **/
 	function getControllerList($plugin = null) {
 		if (!$plugin) {
-			$controllers = App::objects('controller', null, false);
+			$controllers = App::objects('Controller', null, false);
 		} else {
 			$pluginPath = App::pluginPath($plugin);
-			$controllers = App::objects('controller', $pluginPath . 'controllers' . DS, false);
+			$controllers = App::objects($plugin.'.Controller', null, false);
 		}
 		return $controllers;
 	}
@@ -205,7 +210,8 @@ class AclExtrasShell extends Shell {
 			$this->Aco->create(array('parent_id' => $parentId, 'model' => null, 'alias' => $alias));
 			$node = $this->Aco->save();
 			$node['Aco']['id'] = $this->Aco->id;
-			$this->out(sprintf(__('Created Aco node: %s', true), $path));
+			$this->out('Created Aco node: '.$path);
+//			$this->out(sprintf(__('Created Aco node: %s', true), $path));
 		} else {
 			$node = $node[0];
 		}
@@ -220,8 +226,7 @@ class AclExtrasShell extends Shell {
  * @param string $plugin Name of plugin 
  * @return void
  */
-	function _checkMethods($controller, $node, $pluginPath = false) {
-		$className = $controller . 'Controller';
+	function _checkMethods($className, $controllerName, $node, $pluginPath = false) {
 		$baseMethods = get_class_methods('Controller');
 		$actions = get_class_methods($className);
 		$methods = array_diff($actions, $baseMethods);
@@ -229,7 +234,7 @@ class AclExtrasShell extends Shell {
 			if (strpos($action, '_', 0) === 0) {
 				continue;
 			}
-			$path = $this->rootNode . '/' . $pluginPath . $controller . '/' . $action;
+			$path = $this->rootNode . '/' . $pluginPath . $controllerName . '/' . $action;
 			$this->_checkNode($path, $action, $node['Aco']['id']);
 		}
 
