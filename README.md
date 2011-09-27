@@ -1,14 +1,10 @@
 # Acl Extras
 
-Acl Extras provides a console app that helps you manage DbAcl records more easily.  
-Its main feature and purpose is to make generating Aco nodes for all your controllers 
-and actions easier.  It also includes some helper methods for verifying and
-recovering corrupted trees.
+Acl Extras provides a console app that helps you manage DbAcl records more easily.  Its main feature and purpose is to make generating Aco nodes for all your controllers and actions easier.  It also includes some helper methods for verifying and recovering corrupted trees.
 
 ## Installation
 
-Clone the repo or download a tarball and install it into `app/plugins/acl_extras` or 
-in any of your pluginPaths.
+Clone the repo or download a tarball and install it into `app/plugins/acl_extras` or in any of your pluginPaths.
 
 ## Usage
 
@@ -19,13 +15,12 @@ You can find a list of commands by running `cake acl_extras help` from your comm
 You'll need to configure AuthComponent to use the Actions authorization method.  
 In your `beforeFilter` add the following:
 
-    $this->Auth->authorize = 'action';
+    $this->Auth->authorize = 'actions';
     $this->Auth->actionPath = 'controllers/';
 
 ## Issues 
 
-If you find an issue in the code or want to suggest something, please use the 
-tickets at http://github.com/markstory/acl_extras/issues
+If you find an issue in the code or want to suggest something, please use the tickets at http://github.com/markstory/acl_extras/issues
 
 ## License
 
