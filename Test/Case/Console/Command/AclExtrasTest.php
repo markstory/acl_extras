@@ -16,68 +16,26 @@
  * @author Mark Story <mark@mark-story.com>
  * @license http://www.opensource.org/licenses/mit-license.php The MIT License
  */
-
-App::import('Model', 'DbAcl');
-App::import('Core', 'Controller');
-
-if (!defined('DISABLE_AUTO_DISPATCH')) {
-	define('DISABLE_AUTO_DISPATCH', true);
-}
-
-if (!class_exists('Shell')) {
-	require CONSOLE_LIBS . 'shell.php';
-}
-
-if (!class_exists('ShellDispatcher')) {
-	ob_start();
-	$argv = false;
-	require CAKE . 'console' .  DS . 'cake.php';
-	ob_end_clean();
-}
-
-$file = App::pluginPath('acl_extras') . 'vendors' . DS . 'shells' . DS . 'acl_extras.php';
-if (file_exists($file)) {
-	require($file);
-}
+App::uses('Shell', 'Console');
+App::uses('Aco', 'Model');
+App::uses('AclComponent', 'Controller/Component');
+App::uses('Controller', 'Controller');
+App::uses('AclExtrasShell', 'AclExtras.Console/Command');
 
 
-if (!class_exists('AclExtrasShell')) {
-	die('Could not load AclExtras Shell Quitting');
-}
-
-Mock::generatePartial(
-	'ShellDispatcher', 'AclExtrasMockShellDispatcher',
-	array('getInput', 'stdout', 'stderr', '_stop', '_initEnvironment')
-);
-
-Mock::generatePartial(
-	'AclExtrasShell', 'MockAclExtrasShell',
-	array('in', 'hr', 'out', 'err', 'createFile', '_stop', 'getControllerList')
-);
-
-Mock::generate('Aco', 'MockAco', array('children', 'verify', 'recover'));
+//Mock::generate('Aco', 'MockAco', array('children', 'verify', 'recover'));
 
 //import test controller class names.
-include dirname(dirname(dirname(__FILE__))) . DS . 'test_controllers.php';
+include dirname(dirname(dirname(dirname(__FILE__)))) . DS . 'test_controllers.php';
 
 /**
  * AclExtras Shell Test case
  *
  * @package acl_extras.tests.cases
- **/
+ */
 class AclExtrasShellTestCase extends CakeTestCase {
 
-	var $fixtures = array('core.aco', 'core.aro', 'core.aros_aco');
-
-/**
- * start case, change the acl db config
- *
- * @return void
- **/
-	function startCase() {
-		Configure::write('Acl.classname', 'DbAcl');
-		Configure::write('Acl.database', 'test_suite');
-	}
+	public $fixtures = array('core.aco', 'core.aro', 'core.aros_aco');
 
 /**
  * startTest
@@ -85,11 +43,19 @@ class AclExtrasShellTestCase extends CakeTestCase {
  * @return void
  * @access public
  */
-	function startTest() {
-		$this->Dispatcher =& new AclExtrasMockShellDispatcher();
-		$this->Task =& new MockAclExtrasShell($this->Dispatcher);
-		$this->Task->Dispatch =& $this->Dispatcher;
-		$this->Task->Dispatch->shellPaths = Configure::read('shellPaths');
+	function setUp() {
+		parent::setUp();
+		Configure::write('Acl.classname', 'DbAcl');
+		Configure::write('Acl.database', 'test');
+
+		$out = $this->getMock('ConsoleOutput', array(), array(), '', false);
+		$in = $this->getMock('ConsoleInput', array(), array(), '', false);
+
+		$this->Task = $this->getMock(
+			'AclExtrasShell',
+			array('in', 'out', 'hr', 'createFile', 'error', 'err', 'clear', 'getControllerList'),
+			array($out, $out, $in)
+		);
 	}
 
 /**
@@ -97,9 +63,9 @@ class AclExtrasShellTestCase extends CakeTestCase {
  *
  * @return void
  **/
-	function endTest() {
-		unset($this->Task, $this->Dispatcher);
-		ClassRegistry::flush();
+	function tearDown() {
+		parent::tearDown();
+		unset($this->Task);
 	}
 
 /**
@@ -110,12 +76,15 @@ class AclExtrasShellTestCase extends CakeTestCase {
 	function testRecover() {
 		$this->Task->startup();
 		$this->Task->args = array('Aco');
-		$this->Task->Acl->Aco = new MockAco();
-		$this->Task->Acl->Aco->setReturnValue('recover', true);
-		$this->Task->Acl->Aco->expectOnce('recover');
+		$this->Task->Acl->Aco = $this->getMock('Aco', array('recover'));
+		$this->Task->Acl->Aco->expects($this->once())
+			->method('recover')
+			->will($this->returnValue(true));
 
-		$this->Task->expectOnce('out');
-		$this->Task->expectAt(0, 'out', array(new PatternExpectation('/recovered/')));
+		$this->Task->expects($this->once())
+			->method('out')
+			->with($this->matchesRegularExpression('/recovered/'));
+
 		$this->Task->recover();
 	}
 
@@ -127,12 +96,15 @@ class AclExtrasShellTestCase extends CakeTestCase {
 	function testVerify() {
 		$this->Task->startup();
 		$this->Task->args = array('Aco');
-		$this->Task->Acl->Aco = new MockAco();
-		$this->Task->Acl->Aco->setReturnValue('verify', true);
-		$this->Task->Acl->Aco->expectOnce('verify');
+		$this->Task->Acl->Aco = $this->getMock('Aco', array('verify'));
+		$this->Task->Acl->Aco->expects($this->once())
+			->method('verify')
+			->will($this->returnValue(true));
 
-		$this->Task->expectOnce('out');
-		$this->Task->expectAt(0, 'out', array(new PatternExpectation('/valid/')));
+		$this->Task->expects($this->once())
+			->method('out')
+			->with($this->matchesRegularExpression('/valid/'));
+
 		$this->Task->verify();
 	}
 
@@ -144,7 +116,7 @@ class AclExtrasShellTestCase extends CakeTestCase {
 	function testStartup() {
 		$this->assertEqual($this->Task->Acl, null);
 		$this->Task->startup();
-		$this->assertTrue(is_a($this->Task->Acl, 'AclComponent'));
+		$this->assertInstanceOf('AclComponent', $this->Task->Acl);
 	}
 
 /**
@@ -155,7 +127,10 @@ class AclExtrasShellTestCase extends CakeTestCase {
 	function _cleanAndSetup() {
 		$tableName = $this->db->fullTableName('acos');
 		$this->db->execute('DELETE FROM ' . $tableName);
-		$this->Task->setReturnValue('getControllerList', array('Comments', 'Posts', 'BigLongNames'));
+		$this->Task->expects($this->any())
+			->method('getControllerList')
+			->will($this->returnValue(array('CommentsController', 'PostsController', 'BigLongNamesController')));
+
 		$this->Task->startup();
 	}
 /**

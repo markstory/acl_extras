@@ -146,15 +146,13 @@ class AclExtrasShell extends Shell {
 			$pluginPath .= '/';
 		}
 		// look at each controller
-		foreach ($controllers as $controllerClassName) {
-			App::uses($controllerClassName, $dotPlugin.'Controller');
-			
-			$this->{$controllerClassName} = new $controllerClassName;
-			$controllerName = $this->{$controllerClassName}->name;
-			$path = $this->rootNode . '/' . $pluginPath . $controllerName;
+		foreach ($controllers as $controller) {
+			App::uses($controller, $dotPlugin . 'Controller');
+			$controllerName = preg_replace('/Controller$/', '', $controller);
 
+			$path = $this->rootNode . '/' . $pluginPath . $controllerName;
 			$controllerNode = $this->_checkNode($path, $controllerName, $root['Aco']['id']);
-			$this->_checkMethods($controllerClassName, $controllerName, $controllerNode, $pluginPath);
+			$this->_checkMethods($controller, $controllerName, $controllerNode, $pluginPath);
 		}
 		if ($this->_clean) {
 			if (!$plugin) {
@@ -165,11 +163,11 @@ class AclExtrasShell extends Shell {
 			$this->Aco->id = $root['Aco']['id'];
 			$controllerNodes = $this->Aco->children(null, true);
 			foreach ($controllerNodes as $ctrlNode) {
-				if (!isset($controllerFlip[$ctrlNode['Aco']['alias']])) {
-					$this->Aco->id = $ctrlNode['Aco']['id'];
-					if ($this->Aco->delete()) {
-						$this->out(sprintf(
-							__('Deleted %s and all children', true), 
+				$name = $ctrlNode['Aco']['alias'] . 'Controller';
+				if (!isset($controllerFlip[$name])) {
+					if ($this->Aco->delete($ctrlNode['Aco']['id'])) {
+						$this->out(__(
+							'Deleted %s and all children',
 							$this->rootNode . '/' . $ctrlNode['Aco']['alias']
 						));
 					}
@@ -190,8 +188,7 @@ class AclExtrasShell extends Shell {
 		if (!$plugin) {
 			$controllers = App::objects('Controller', null, false);
 		} else {
-			$pluginPath = App::pluginPath($plugin);
-			$controllers = App::objects($plugin.'.Controller', null, false);
+			$controllers = App::objects($plugin . '.Controller', null, false);
 		}
 		return $controllers;
 	}
@@ -210,8 +207,7 @@ class AclExtrasShell extends Shell {
 			$this->Aco->create(array('parent_id' => $parentId, 'model' => null, 'alias' => $alias));
 			$node = $this->Aco->save();
 			$node['Aco']['id'] = $this->Aco->id;
-			$this->out('Created Aco node: '.$path);
-//			$this->out(sprintf(__('Created Aco node: %s', true), $path));
+			$this->out(__('Created Aco node: %s', $path));
 		} else {
 			$node = $node[0];
 		}
@@ -245,8 +241,8 @@ class AclExtrasShell extends Shell {
 				if (!isset($methodFlip[$action['Aco']['alias']])) {
 					$this->Aco->id = $action['Aco']['id'];
 					if ($this->Aco->delete()) {
-						$path = $this->rootNode . '/' . $controller . '/' . $action['Aco']['alias'];
-						$this->out(sprintf(__('Deleted Aco node %s', true), $path));
+						$path = $this->rootNode . '/' . $controllerName . '/' . $action['Aco']['alias'];
+						$this->out(__('Deleted Aco node %s', $path));
 					}
 				}
 			}
@@ -310,7 +306,7 @@ class AclExtrasShell extends Shell {
 		$type = Inflector::camelize($this->args[0]);
 		$return = $this->Acl->{$type}->verify();
 		if ($return === true) {
-			$this->out(__('Tree is valid and strong', true));
+			$this->out(__('Tree is valid and strong'));
 		} else {
 			$this->out(print_r($return, true));
 		}
@@ -324,16 +320,15 @@ class AclExtrasShell extends Shell {
  */
 	function recover() {
 		if (empty($this->args[0])) {
-			$this->err(__('Missing Type', true));
+			$this->err(__('Missing Type'));
 			$this->_stop();
 		}
 		$type = Inflector::camelize($this->args[0]);
 		$return = $this->Acl->{$type}->recover();
 		if ($return === true) {
-			$this->out(__('Tree has been recovered, or tree did not need recovery.', true));
+			$this->out(__('Tree has been recovered, or tree did not need recovery.'));
 		} else {
-			$this->out(__('Tree recovery failed.', true));
+			$this->out(__('<error>Tree recovery failed.</error>'));
 		}
 	}
 }
-?>
