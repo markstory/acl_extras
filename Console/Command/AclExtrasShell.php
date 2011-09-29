@@ -17,6 +17,7 @@
  * @license http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
+App::uses('Controller', 'Controller');
 App::uses('ComponentCollection', 'Controller');
 App::uses('AclComponent', 'Controller/Component');
 App::uses('DbAcl', 'Model');
@@ -25,16 +26,16 @@ App::uses('DbAcl', 'Model');
  * Shell for ACO extras
  *
  * @package		acl_extras
- * @subpackage	acl_extras.vendors.shells
+ * @subpackage	acl_extras.Console.Command
  */
 class AclExtrasShell extends Shell {
 /**
  * Contains instance of AclComponent
  *
- * @var object
+ * @var AclComponent
  * @access public
  */
-	var $Acl;
+	public $Acl;
 
 /**
  * Contains arguments parsed from the command line.
@@ -136,14 +137,15 @@ class AclExtrasShell extends Shell {
  * @return void
  */
 	function _updateControllers($root, $controllers, $plugin = null) {
-		$appIndex = array_search($plugin . 'App', $controllers);
-		if ($appIndex !== false) {
-			unset($controllers[$appIndex]);
-		}
 		$dotPlugin = $pluginPath = $plugin;
 		if ($plugin) {
 			$dotPlugin .= '.';
 			$pluginPath .= '/';
+		}
+		$appIndex = array_search($plugin . 'AppController', $controllers);
+		if ($appIndex !== false) {
+			App::uses($plugin . 'AppController', $dotPlugin . 'Controller');
+			unset($controllers[$appIndex]);
 		}
 		// look at each controller
 		foreach ($controllers as $controller) {
