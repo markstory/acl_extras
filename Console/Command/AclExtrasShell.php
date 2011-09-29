@@ -82,22 +82,6 @@ class AclExtrasShell extends Shell {
 	}
 
 /**
- * Override main() for help message hook
- *
- * @access public
- */
-	function main() {
-		$out  = __("Available ACO sync commands:", true) . "\n";
-		$out .= "\t - aco_update\n";
-		$out .= "\t - aco_sync\n";
-		$out .= "\t - recover \$type\n";
-		$out .= "\t - verify \$type\n";
-		$out .= "\t - help\n\n";
-		$out .= __("For help, run the 'help' command.  For help on a specific command, run 'help <command>'", true);
-		$this->out($out);
-	}
-
-/**
  * Sync the ACO table
  *
  * @return void
@@ -124,7 +108,7 @@ class AclExtrasShell extends Shell {
 			$pluginRoot = $this->_checkNode($path, $plugin, $root['Aco']['id']);
 			$this->_updateControllers($pluginRoot, $controllers, $plugin);
 		}
-		$this->out(__('Aco Update Complete', true));
+		$this->out(__('<success>Aco Update Complete</success>'));
 		return true;
 	}
 
@@ -171,7 +155,7 @@ class AclExtrasShell extends Shell {
 						$this->out(__(
 							'Deleted %s and all children',
 							$this->rootNode . '/' . $ctrlNode['Aco']['alias']
-						));
+						), 1, Shell::VERBOSE);
 					}
 				}
 			}
@@ -209,7 +193,7 @@ class AclExtrasShell extends Shell {
 			$this->Aco->create(array('parent_id' => $parentId, 'model' => null, 'alias' => $alias));
 			$node = $this->Aco->save();
 			$node['Aco']['id'] = $this->Aco->id;
-			$this->out(__('Created Aco node: %s', $path));
+			$this->out(__('Created Aco node: %s', $path), 1, Shell::VERBOSE);
 		} else {
 			$node = $node[0];
 		}
@@ -244,7 +228,7 @@ class AclExtrasShell extends Shell {
 					$this->Aco->id = $action['Aco']['id'];
 					if ($this->Aco->delete()) {
 						$path = $this->rootNode . '/' . $controllerName . '/' . $action['Aco']['alias'];
-						$this->out(__('Deleted Aco node %s', $path));
+						$this->out(__('Deleted Aco node %s', $path), 1, Shell::VERBOSE);
 					}
 				}
 			}
@@ -252,47 +236,40 @@ class AclExtrasShell extends Shell {
 		return true;
 	}
 
-
-/**
- * Show help screen.
- *
- * @access public
- */
-	function help() {
-		$head  = __("Usage: cake acl_extras <command>", true) . "\n";
-		$head .= "-----------------------------------------------\n";
-		$head .= __("Commands:", true) . "\n\n";
-
-		$commands = array(
-			'update' => "\tcake acl_extras aco_update\n" .
-						"\t\t" . __("Add new ACOs for new controllers and actions", true) . "\n" .
-						"\t\t" . __("Create new ACO's for controllers and their actions. Does not remove any nodes from ACO table", true),
-
-			'sync' =>	"\tcake acl_extras aco_sync\n" .
-						"\t\tPerform a full sync on the ACO table.\n" .
-						"\t\t" . __("Creates new ACO's for missing controllers and actions. Removes orphaned entries in the ACO table.", true) . "\n",
-
-			'verify' => "\tcake acl_extras verify \$type\n" .
-						"\t\t" . __('Verify the tree structure of either your Aco or Aro Trees', true),
-
-			'recover' => "\tcake acl_extras recover \$type\n" .
-						 "\t\t" . __('Recover a corrupted Tree', true),
-
-			'help' => 	"\thelp [<command>]\n" .
-						"\t\t" . __("Displays this help message, or a message on a specific command.", true) . "\n"
-		);
-
-		$this->out($head);
-		if (!isset($this->args[0])) {
-			foreach ($commands as $cmd) {
-				$this->out("{$cmd}\n\n");
-			}
-		} elseif (isset($commands[low($this->args[0])])) {
-			$this->out($commands[low($this->args[0])] . "\n");
-		} else {
-			$this->out(sprintf(__("Command '%s' not found", true), $this->args[0]));
-		}
+	public function getOptionParser() {
+		return parent::getOptionParser()
+			->description(__("Better manage, and easily synchronize you application's ACO tree"))
+			->addSubcommand('aco_update', array(
+				'help' => __('Add new ACOs for new controllers and actions. Does not remove nodes from the ACO table.')
+			))->addSubcommand('aco_sync', array(
+				'help' => __('Perform a full sync on the ACO table.' .
+					'Will create new ACOs or missing controllers and actions.' .
+					'Will also remove orphaned entries that no longer have a matching controller/action')
+			))->addSubcommand('verify', array(
+				'help' => __('Verify the tree structure of either your Aco or Aro Trees'),
+				'parser' => array(
+					'arguments' => array(
+						'type' => array(
+							'required' => true,
+							'help' => __('The type of tree to verify'),
+							'choices' => array('aco', 'aro')
+						)
+					)
+				)
+			))->addSubcommand('recover', array(
+				'help' => __('Recover a corrupted Tree'),
+				'parser' => array(
+					'arguments' => array(
+						'type' => array(
+							'required' => true,
+							'help' => __('The type of tree to recover'),
+							'choices' => array('aco', 'aro')
+						)
+					)
+				)
+			));
 	}
+
 /**
  * Verify a Acl Tree
  *
@@ -301,16 +278,13 @@ class AclExtrasShell extends Shell {
  * @return void
  */
 	function verify() {
-		if (empty($this->args[0])) {
-			$this->err(__('Missing Type', true));
-			$this->_stop();
-		}
 		$type = Inflector::camelize($this->args[0]);
 		$return = $this->Acl->{$type}->verify();
 		if ($return === true) {
 			$this->out(__('Tree is valid and strong'));
 		} else {
-			$this->out(print_r($return, true));
+			$this->err(print_r($return, true));
+			return false;
 		}
 	}
 /**
@@ -321,16 +295,13 @@ class AclExtrasShell extends Shell {
  * @return void
  */
 	function recover() {
-		if (empty($this->args[0])) {
-			$this->err(__('Missing Type'));
-			$this->_stop();
-		}
 		$type = Inflector::camelize($this->args[0]);
 		$return = $this->Acl->{$type}->recover();
 		if ($return === true) {
 			$this->out(__('Tree has been recovered, or tree did not need recovery.'));
 		} else {
-			$this->out(__('<error>Tree recovery failed.</error>'));
+			$this->err(__('<error>Tree recovery failed.</error>'));
+			return false;
 		}
 	}
 }
