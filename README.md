@@ -4,11 +4,11 @@ Acl Extras provides a console app that helps you manage DbAcl records more easil
 
 ## Installation
 
-Clone the repo or download a tarball and install it into `app/plugins/acl_extras` or in any of your pluginPaths.
+Clone the repo or download a tarball and install it into `app/Plugin/AclExtras` or in any of your pluginPaths.
 
 ## Usage
 
-You can find a list of commands by running `cake acl_extras help` from your command line.
+You can find a list of commands by running `Console/cake AclExtras.AclExtras -h` from your command line.
 
 ### Setting up the contorller
 
