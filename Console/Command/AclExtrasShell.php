@@ -100,7 +100,7 @@ class AclExtrasShell extends Shell {
 		$controllers = $this->getControllerList();
 		$this->_updateControllers($root, $controllers);
 
-		$plugins = App::objects('plugin', null, false);
+		$plugins = CakePlugin::loaded();
 		foreach ($plugins as $plugin) {
 			$controllers = $this->getControllerList($plugin);
 
@@ -205,7 +205,7 @@ class AclExtrasShell extends Shell {
  *
  * @param string $controller
  * @param array $node
- * @param string $plugin Name of plugin 
+ * @param string $plugin Name of plugin
  * @return void
  */
 	function _checkMethods($className, $controllerName, $node, $pluginPath = false) {
