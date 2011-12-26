@@ -149,8 +149,9 @@ class AclExtrasShell extends Shell {
 			$this->Aco->id = $root['Aco']['id'];
 			$controllerNodes = $this->Aco->children(null, true);
 			foreach ($controllerNodes as $ctrlNode) {
-				$name = $ctrlNode['Aco']['alias'] . 'Controller';
-				if (!isset($controllerFlip[$name])) {
+				$alias = $ctrlNode['Aco']['alias'];
+				$name = $alias . 'Controller';
+				if (!isset($controllerFlip[$name]) && !isset($controllerFlip[$alias])) {
 					if ($this->Aco->delete($ctrlNode['Aco']['id'])) {
 						$this->out(__(
 							'Deleted %s and all children',
