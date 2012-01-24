@@ -100,8 +100,8 @@ class AclExtrasShell extends Shell {
             $this->rootNode = $this->params['root-node'];
         }
 
+        $root = $this->_checkNode($this->rootNode, $this->rootNode, null);
         if(empty($this->params['only-plugins'])) {
-            $root = $this->_checkNode($this->rootNode, $this->rootNode, null);
             $controllers = $this->getControllerList();
             $this->_updateControllers($root, $controllers);
         }
