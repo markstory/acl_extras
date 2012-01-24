@@ -96,6 +96,10 @@ class AclExtrasShell extends Shell {
  * @return void
  **/
 	function aco_update() {
+        if(!empty($this->params['root-node'])) {
+            $this->rootNode = $this->params['root-node'];
+        }
+
 		$root = $this->_checkNode($this->rootNode, $this->rootNode, null);
 		$controllers = $this->getControllerList();
 		$this->_updateControllers($root, $controllers);
@@ -241,11 +245,29 @@ class AclExtrasShell extends Shell {
 		return parent::getOptionParser()
 			->description(__("Better manage, and easily synchronize you application's ACO tree"))
 			->addSubcommand('aco_update', array(
-				'help' => __('Add new ACOs for new controllers and actions. Does not remove nodes from the ACO table.')
+				'help' => __('Add new ACOs for new controllers and actions. Does not remove nodes from the ACO table.'),
+				'parser' => array(
+					'options' => array(
+						'root-node' => array(
+                            'short' => 'r',
+							'help' => __('Enter custom root node.'),
+                            'default' => 'controllers',
+						)
+					)
+				)
 			))->addSubcommand('aco_sync', array(
 				'help' => __('Perform a full sync on the ACO table.' .
 					'Will create new ACOs or missing controllers and actions.' .
-					'Will also remove orphaned entries that no longer have a matching controller/action')
+					'Will also remove orphaned entries that no longer have a matching controller/action'),
+				'parser' => array(
+					'options' => array(
+						'root-node' => array(
+                            'short' => 'r',
+							'help' => __('Enter custom root node.'),
+                            'default' => 'controllers',
+						)
+					)
+				)
 			))->addSubcommand('verify', array(
 				'help' => __('Verify the tree structure of either your Aco or Aro Trees'),
 				'parser' => array(
