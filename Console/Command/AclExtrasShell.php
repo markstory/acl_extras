@@ -88,7 +88,7 @@ class AclExtrasShell extends Shell {
  **/
 	function aco_sync() {
 		$this->_clean = true;
-		$this->aco_update();
+		return $this->aco_update();
 	}
 /**
  * Updates the Aco Tree with new controller actions.
