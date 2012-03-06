@@ -74,9 +74,9 @@ class AclExtrasShell extends Shell {
  **/
 	public function startup() {
 		parent::startup();
+		$controller = new Controller();
 		$collection = new ComponentCollection();
 		$this->Acl = new AclComponent($collection);
-		$controller = null;
 		$this->Acl->startup($controller);
 		$this->Aco = $this->Acl->Aco;
 	}
