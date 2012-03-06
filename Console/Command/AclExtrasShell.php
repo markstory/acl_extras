@@ -88,7 +88,7 @@ class AclExtrasShell extends Shell {
  **/
 	function aco_sync() {
 		$this->_clean = true;
-		$this->aco_update();
+		return $this->aco_update();
 	}
 /**
  * Updates the Aco Tree with new controller actions.
@@ -96,12 +96,23 @@ class AclExtrasShell extends Shell {
  * @return void
  **/
 	function aco_update() {
-		$root = $this->_checkNode($this->rootNode, $this->rootNode, null);
-		$controllers = $this->getControllerList();
-		$this->_updateControllers($root, $controllers);
+        if(!empty($this->params['root-node'])) {
+            $this->rootNode = $this->params['root-node'];
+        }
 
-		$plugins = CakePlugin::loaded();
+        $root = $this->_checkNode($this->rootNode, $this->rootNode, null);
+        if(empty($this->params['only-plugins'])) {
+            $controllers = $this->getControllerList();
+            $this->_updateControllers($root, $controllers);
+        }
+
+		$plugins = $allowedPlugins = CakePlugin::loaded();
+        if(!empty($this->params['plugins'])) {
+            $allowedPlugins = explode(',', $this->params['plugins']);
+        }
 		foreach ($plugins as $plugin) {
+            if(!in_array($plugin, $allowedPlugins)) continue;
+
 			$controllers = $this->getControllerList($plugin);
 
 			$path = $this->rootNode . '/' . $plugin;
@@ -238,14 +249,32 @@ class AclExtrasShell extends Shell {
 	}
 
 	public function getOptionParser() {
+        $acoParser = array(
+            'options' => array(
+                'root-node' => array(
+                    'short' => 'r',
+                    'help' => __('Enter custom root node.'),
+                    'default' => 'controllers',
+                ),
+                'plugins' => array(
+                    'short' => 'p',
+                    'help' => __('Comma separated list of plugins to synchronize.')
+                ),
+                'only-plugins' => array(
+                    'help' => __('Synchronize only controllers/actions in plugins.')
+                )
+            )
+        );
 		return parent::getOptionParser()
 			->description(__("Better manage, and easily synchronize you application's ACO tree"))
 			->addSubcommand('aco_update', array(
-				'help' => __('Add new ACOs for new controllers and actions. Does not remove nodes from the ACO table.')
+				'help' => __('Add new ACOs for new controllers and actions. Does not remove nodes from the ACO table.'),
+				'parser' => $acoParser
 			))->addSubcommand('aco_sync', array(
 				'help' => __('Perform a full sync on the ACO table.' .
 					'Will create new ACOs or missing controllers and actions.' .
-					'Will also remove orphaned entries that no longer have a matching controller/action')
+					'Will also remove orphaned entries that no longer have a matching controller/action'),
+				'parser' => $acoParser
 			))->addSubcommand('verify', array(
 				'help' => __('Verify the tree structure of either your Aco or Aro Trees'),
 				'parser' => array(
