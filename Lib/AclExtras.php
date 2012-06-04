@@ -106,9 +106,9 @@ class AclExtras extends Object {
  *
  * @return void
  **/
-	public function aco_sync() {
+	public function aco_sync($params = array()) {
 		$this->_clean = true;
-		$this->aco_update();
+		$this->aco_update($params);
 	}
 
 /**
@@ -116,12 +116,22 @@ class AclExtras extends Object {
  *
  * @return void
  **/
-	public function aco_update() {
+	public function aco_update($params = array()) {
 		$root = $this->_checkNode($this->rootNode, $this->rootNode, null);
-		$controllers = $this->getControllerList();
-		$this->_updateControllers($root, $controllers);
 
-		$plugins = CakePlugin::loaded();
+		if (empty($params['plugin'])) {
+			$controllers = $this->getControllerList();
+			$this->_updateControllers($root, $controllers);
+			$plugins = CakePlugin::loaded();
+		} else {
+			$plugin = $params['plugin'];
+			if (!in_array($plugin, App::objects('plugin')) || !CakePlugin::loaded($plugin)) {
+				$this->err(__('<error>Plugin %s not found or not activated</error>', $plugin));
+				return false;
+			}
+			$plugins = array($params['plugin']);
+		}
+
 		foreach ($plugins as $plugin) {
 			$controllers = $this->getControllerList($plugin);
 
