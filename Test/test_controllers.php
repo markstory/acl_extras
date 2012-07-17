@@ -1,53 +1,46 @@
 <?php
 
 class CommentsController extends Controller {
-	function add() {
 
+	public function add() {
 	}
 
-	function index() {
-
+	public function index() {
 	}
 
-	function delete() {
+	public function delete() {
+	}
 
+	public function _secret_method() {
 	}
-	
-	function _secret_method() {
-		
-	}
+
 }
 
 class PostsController extends Controller {
 
-	function index() {
-
+	public function index() {
 	}
 
-	function add() {
-
+	public function add() {
 	}
 
-	function edit() {
-
+	public function edit() {
 	}
+
 }
 
 class BigLongNamesController extends Controller {
 
-	function index() {
-
+	public function index() {
 	}
 
-	function view() {
-
+	public function view() {
 	}
 
-	function add() {
-
+	public function add() {
 	}
 
-	function delete() {
-
+	public function delete() {
 	}
+
 }

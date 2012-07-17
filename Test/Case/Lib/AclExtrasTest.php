@@ -20,13 +20,13 @@ App::uses('Shell', 'Console');
 App::uses('Aco', 'Model');
 App::uses('AclComponent', 'Controller/Component');
 App::uses('Controller', 'Controller');
-App::uses('AclExtrasShell', 'AclExtras.Console/Command');
+App::uses('AclExtras', 'AclExtras.Lib');
 
 
 //Mock::generate('Aco', 'MockAco', array('children', 'verify', 'recover'));
 
 //import test controller class names.
-include dirname(dirname(dirname(dirname(__FILE__)))) . DS . 'test_controllers.php';
+include dirname(dirname(dirname(__FILE__))) . DS . 'test_controllers.php';
 
 /**
  * AclExtras Shell Test case
@@ -43,18 +43,14 @@ class AclExtrasShellTestCase extends CakeTestCase {
  * @return void
  * @access public
  */
-	function setUp() {
+	public function setUp() {
 		parent::setUp();
 		Configure::write('Acl.classname', 'DbAcl');
 		Configure::write('Acl.database', 'test');
 
-		$out = $this->getMock('ConsoleOutput', array(), array(), '', false);
-		$in = $this->getMock('ConsoleInput', array(), array(), '', false);
-
 		$this->Task = $this->getMock(
-			'AclExtrasShell',
-			array('in', 'out', 'hr', 'createFile', 'error', 'err', 'clear', 'getControllerList'),
-			array($out, $out, $in)
+			'AclExtras',
+			array('in', 'out', 'hr', 'createFile', 'error', 'err', 'clear', 'getControllerList')
 		);
 	}
 
@@ -63,7 +59,7 @@ class AclExtrasShellTestCase extends CakeTestCase {
  *
  * @return void
  **/
-	function tearDown() {
+	public function tearDown() {
 		parent::tearDown();
 		unset($this->Task);
 	}
@@ -73,7 +69,7 @@ class AclExtrasShellTestCase extends CakeTestCase {
  *
  * @return void
  **/
-	function testRecover() {
+	public function testRecover() {
 		$this->Task->startup();
 		$this->Task->args = array('Aco');
 		$this->Task->Acl->Aco = $this->getMock('Aco', array('recover'));
@@ -93,7 +89,7 @@ class AclExtrasShellTestCase extends CakeTestCase {
  *
  * @return void
  **/
-	function testVerify() {
+	public function testVerify() {
 		$this->Task->startup();
 		$this->Task->args = array('Aco');
 		$this->Task->Acl->Aco = $this->getMock('Aco', array('verify'));
@@ -113,7 +109,7 @@ class AclExtrasShellTestCase extends CakeTestCase {
  *
  * @return void
  **/
-	function testStartup() {
+	public function testStartup() {
 		$this->assertEqual($this->Task->Acl, null);
 		$this->Task->startup();
 		$this->assertInstanceOf('AclComponent', $this->Task->Acl);
@@ -124,7 +120,7 @@ class AclExtrasShellTestCase extends CakeTestCase {
  *
  * @return void
  **/
-	function _cleanAndSetup() {
+	protected function _cleanAndSetup() {
 		$tableName = $this->db->fullTableName('acos');
 		$this->db->execute('DELETE FROM ' . $tableName);
 		$this->Task->expects($this->any())
@@ -138,7 +134,7 @@ class AclExtrasShellTestCase extends CakeTestCase {
  *
  * @return void
  **/
-	function testAcoUpdate() {
+	public function testAcoUpdate() {
 		$this->_cleanAndSetup();
 		$this->Task->aco_update();
 
@@ -169,7 +165,7 @@ class AclExtrasShellTestCase extends CakeTestCase {
  *
  * @return void
  **/
-	function testAcoSyncRemoveMethods() {
+	public function testAcoSyncRemoveMethods() {
 		$this->_cleanAndSetup();
 		$this->Task->aco_update();
 
@@ -199,7 +195,7 @@ class AclExtrasShellTestCase extends CakeTestCase {
  *
  * @return void
  **/
-	function testAcoUpdateAddingMethods() {
+	public function testAcoUpdateAddingMethods() {
 		$this->_cleanAndSetup();
 		$this->Task->aco_update();
 
@@ -223,7 +219,7 @@ class AclExtrasShellTestCase extends CakeTestCase {
  *
  * @return void
  **/
-	function testAddingControllers() {
+	public function testAddingControllers() {
 		$this->_cleanAndSetup();
 		$this->Task->aco_update();
 
