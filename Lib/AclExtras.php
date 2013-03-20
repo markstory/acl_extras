@@ -243,6 +243,10 @@ class AclExtras extends Object {
 	protected function _checkMethods($className, $controllerName, $node, $pluginPath = false) {
 		$baseMethods = get_class_methods('Controller');
 		$actions = get_class_methods($className);
+		if ($actions == null) {
+			$this->err(__('Unable to get methods for "%s"', $className));
+			return false;
+		}
 		$methods = array_diff($actions, $baseMethods);
 		foreach ($methods as $action) {
 			if (strpos($action, '_', 0) === 0) {
