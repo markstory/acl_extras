@@ -233,6 +233,31 @@ class AclExtras extends Object {
 	}
 
 /**
+ * Get a list of registered callback methods
+ */
+	protected function _getCallbacks($className) {
+		$reflection = new ReflectionClass($className);
+		$method = $reflection->getMethod('implementedEvents');
+		if (version_compare(phpversion(), '5.4', '>=')) {
+			$object = $reflection->newInstanceWithoutConstructor();
+		} else {
+			$object = unserialize(
+				sprintf('O:%d:"%s":0:{}', strlen($className), $className)
+			);
+		}
+		$implementedEvents = $method->invoke($object);
+		foreach ($implementedEvents as $event => $callable) {
+			if (is_string($callable)) {
+				$callbacks[] = $callable;
+			}
+			if (is_array($callable) && isset($callable['callable'])) {
+				$callbacks[] = $callable['callable'];
+			}
+		}
+		return $callbacks;
+	}
+
+/**
  * Check and Add/delete controller Methods
  *
  * @param string $controller
@@ -241,6 +266,7 @@ class AclExtras extends Object {
  * @return void
  */
 	protected function _checkMethods($className, $controllerName, $node, $pluginPath = false) {
+		$excludes = $this->_getCallbacks($className);
 		$baseMethods = get_class_methods('Controller');
 		$actions = get_class_methods($className);
 		if ($actions == null) {
@@ -248,6 +274,7 @@ class AclExtras extends Object {
 			return false;
 		}
 		$methods = array_diff($actions, $baseMethods);
+		$methods = array_diff($methods, $excludes);
 		foreach ($methods as $action) {
 			if (strpos($action, '_', 0) === 0) {
 				continue;
