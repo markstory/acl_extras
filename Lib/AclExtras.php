@@ -236,8 +236,13 @@ class AclExtras extends Object {
  * Get a list of registered callback methods
  */
 	protected function _getCallbacks($className) {
+		$callbacks = array();
 		$reflection = new ReflectionClass($className);
-		$method = $reflection->getMethod('implementedEvents');
+		try {
+			$method = $reflection->getMethod('implementedEvents');
+		} catch (ReflectionException $e) {
+			return $callbacks;
+		}
 		if (version_compare(phpversion(), '5.4', '>=')) {
 			$object = $reflection->newInstanceWithoutConstructor();
 		} else {
