@@ -1,17 +1,11 @@
 <?php
 /**
- * Acl Extras Shell.
- *
- * Enhances the existing Acl Shell with a few handy functions
- *
- * Copyright 2008, Mark Story.
- * 694B The Queensway
- * toronto, ontario M8Y 1K9
+ * Acl Extras.
  *
  * Licensed under The MIT License
  * Redistributions of files must retain the above copyright notice.
  *
- * @copyright Copyright 2008-2010, Mark Story.
+ * @copyright Copyright 2008-2013, Mark Story.
  * @link http://mark-story.com
  * @author Mark Story <mark@mark-story.com>
  * @license http://www.opensource.org/licenses/mit-license.php The MIT License
