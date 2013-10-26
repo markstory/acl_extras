@@ -6,6 +6,10 @@ Acl Extras provides a console app that helps you manage DbAcl records more easil
 
 Clone the repo or download a tarball and install it into `app/Plugin/AclExtras` or in any of your pluginPaths.
 
+Then activate the plugin in your app/Config/bootstrap.php file as shown below:
+
+    CakePlugin::load('AclExtras');
+
 ## Usage
 
 You can find a list of commands by running `Console/cake AclExtras.AclExtras -h` from your command line.
