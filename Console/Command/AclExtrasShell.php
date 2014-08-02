@@ -21,102 +21,109 @@ App::uses('AclExtras', 'AclExtras.Lib');
  * @package		acl_extras
  * @subpackage	acl_extras.Console.Command
  */
-class AclExtrasShell extends Shell {
-
+class AclExtrasShell extends Shell
+{
 /**
  * Contains arguments parsed from the command line.
  *
  * @var array
  * @access public
  */
-	public $args;
+    public $args;
 
 /**
  * AclExtras instance
  */
-	public $AclExtras;
+    public $AclExtras;
 
 /**
  * Constructor
  */
-	public function __construct($stdout = null, $stderr = null, $stdin = null) {
-		parent::__construct($stdout, $stderr, $stdin);
-		$this->AclExtras = new AclExtras();
-	}
+    public function __construct($stdout = null, $stderr = null, $stdin = null)
+    {
+        parent::__construct($stdout, $stderr, $stdin);
+        $this->AclExtras = new AclExtras();
+    }
 
 /**
  * Start up And load Acl Component / Aco model
  *
  * @return void
  **/
-	public function startup() {
-		parent::startup();
-		$this->AclExtras->startup();
-		$this->AclExtras->Shell = $this;
-	}
+    public function startup()
+    {
+        parent::startup();
+        $this->AclExtras->startup();
+        $this->AclExtras->Shell = $this;
+    }
 
 /**
  * Sync the ACO table
  *
  * @return void
  **/
-	public function aco_sync() {
-		$this->AclExtras->aco_sync($this->params);
-	}
+    public function aco_sync()
+    {
+        $this->AclExtras->aco_sync($this->params);
+    }
 
 /**
  * Updates the Aco Tree with new controller actions.
  *
  * @return void
  **/
-	public function aco_update() {
-		$this->AclExtras->aco_update($this->params);
-		return true;
-	}
+    public function aco_update()
+    {
+        $this->AclExtras->aco_update($this->params);
 
-	public function getOptionParser() {
-		$plugin = array(
-			'short' => 'p',
-			'help' => __('Plugin to process'),
-			);
-		return parent::getOptionParser()
-			->description(__("Better manage, and easily synchronize you application's ACO tree"))
-			->addSubcommand('aco_update', array(
-				'parser' => array(
-					'options' => compact('plugin'),
-					),
-				'help' => __('Add new ACOs for new controllers and actions. Does not remove nodes from the ACO table.')
-			))->addSubcommand('aco_sync', array(
-				'parser' => array(
-					'options' => compact('plugin'),
-					),
-				'help' => __('Perform a full sync on the ACO table.' .
-					'Will create new ACOs or missing controllers and actions.' .
-					'Will also remove orphaned entries that no longer have a matching controller/action')
-			))->addSubcommand('verify', array(
-				'help' => __('Verify the tree structure of either your Aco or Aro Trees'),
-				'parser' => array(
-					'arguments' => array(
-						'type' => array(
-							'required' => true,
-							'help' => __('The type of tree to verify'),
-							'choices' => array('aco', 'aro')
-						)
-					)
-				)
-			))->addSubcommand('recover', array(
-				'help' => __('Recover a corrupted Tree'),
-				'parser' => array(
-					'arguments' => array(
-						'type' => array(
-							'required' => true,
-							'help' => __('The type of tree to recover'),
-							'choices' => array('aco', 'aro')
-						)
-					)
-				)
-			));
-	}
+        return true;
+    }
+
+    public function getOptionParser()
+    {
+        $plugin = array(
+            'short' => 'p',
+            'help' => __('Plugin to process'),
+            );
+
+        return parent::getOptionParser()
+            ->description(__("Better manage, and easily synchronize you application's ACO tree"))
+            ->addSubcommand('aco_update', array(
+                'parser' => array(
+                    'options' => compact('plugin'),
+                    ),
+                'help' => __('Add new ACOs for new controllers and actions. Does not remove nodes from the ACO table.')
+            ))->addSubcommand('aco_sync', array(
+                'parser' => array(
+                    'options' => compact('plugin'),
+                    ),
+                'help' => __('Perform a full sync on the ACO table.' .
+                    'Will create new ACOs or missing controllers and actions.' .
+                    'Will also remove orphaned entries that no longer have a matching controller/action')
+            ))->addSubcommand('verify', array(
+                'help' => __('Verify the tree structure of either your Aco or Aro Trees'),
+                'parser' => array(
+                    'arguments' => array(
+                        'type' => array(
+                            'required' => true,
+                            'help' => __('The type of tree to verify'),
+                            'choices' => array('aco', 'aro')
+                        )
+                    )
+                )
+            ))->addSubcommand('recover', array(
+                'help' => __('Recover a corrupted Tree'),
+                'parser' => array(
+                    'arguments' => array(
+                        'type' => array(
+                            'required' => true,
+                            'help' => __('The type of tree to recover'),
+                            'choices' => array('aco', 'aro')
+                        )
+                    )
+                )
+            ));
+    }
 
 /**
  * Verify a Acl Tree
@@ -125,10 +132,12 @@ class AclExtrasShell extends Shell {
  * @access public
  * @return void
  */
-	public function verify() {
-		$this->AclExtras->args = $this->args;
-		return $this->AclExtras->verify();
-	}
+    public function verify()
+    {
+        $this->AclExtras->args = $this->args;
+
+        return $this->AclExtras->verify();
+    }
 /**
  * Recover an Acl Tree
  *
@@ -136,8 +145,9 @@ class AclExtrasShell extends Shell {
  * @access public
  * @return void
  */
-	public function recover() {
-		$this->AclExtras->args = $this->args;
-		$this->AclExtras->recover();
-	}
+    public function recover()
+    {
+        $this->AclExtras->args = $this->args;
+        $this->AclExtras->recover();
+    }
 }
