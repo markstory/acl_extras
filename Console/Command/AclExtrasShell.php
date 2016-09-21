@@ -12,7 +12,7 @@
  * @author Mark Story <mark@mark-story.com>
  * @license http://www.opensource.org/licenses/mit-license.php The MIT License
  */
-
+App::uses('Shell', 'Console');
 App::uses('AclExtras', 'AclExtras.Lib');
 
 /**

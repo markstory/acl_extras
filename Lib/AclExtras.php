@@ -16,6 +16,7 @@ App::uses('ComponentCollection', 'Controller');
 App::uses('AclComponent', 'Controller/Component');
 App::uses('DbAcl', 'Model');
 App::uses('Shell', 'Console');
+App::uses('Object', 'Core');
 
 /**
  * Shell for ACO extras
