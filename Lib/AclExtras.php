@@ -82,7 +82,7 @@ class AclExtras extends CakeObject {
 
 	public function out($msg) {
 		if (!empty($this->controller->Session)) {
-			$this->controller->Session->setFlash($msg);
+			$this->controller->Flash->set($msg);
 		} else {
 			return $this->Shell->out($msg);
 		}
@@ -90,7 +90,7 @@ class AclExtras extends CakeObject {
 
 	public function err($msg) {
 		if (!empty($this->controller->Session)) {
-			$this->controller->Session->setFlash($msg);
+			$this->controller->Flash->set($msg);;
 		} else {
 			return $this->Shell->err($msg);
 		}
