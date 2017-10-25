@@ -16,7 +16,7 @@ App::uses('ComponentCollection', 'Controller');
 App::uses('AclComponent', 'Controller/Component');
 App::uses('DbAcl', 'Model');
 App::uses('Shell', 'Console');
-App::uses('Object', 'Core');
+App::uses('CakeObject', 'Core');
 
 /**
  * Shell for ACO extras
@@ -24,7 +24,7 @@ App::uses('Object', 'Core');
  * @package		acl_extras
  * @subpackage	acl_extras.Console.Command
  */
-class AclExtras extends Object {
+class AclExtras extends CakeObject {
 
 /**
  * Contains instance of AclComponent
