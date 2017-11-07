@@ -1,8 +1,11 @@
 <?php
+
+use PHPUnit\Framework\TestSuite;
+
 /**
  * All Tests Test case.
  */
-class AllTestsTest extends PHPUnit_Framework_TestSuite {
+class AllTestsTest extends TestSuite {
 
 /**
  * suite method, defines tests for this suite.
