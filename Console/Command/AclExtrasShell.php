@@ -21,7 +21,7 @@ App::uses('AclExtras', 'AclExtras.Lib');
  * @package		acl_extras
  * @subpackage	acl_extras.Console.Command
  */
-class AclExtrasShell extends Shell {
+class AclExtrasShell extends AppShell {
 
 /**
  * Contains arguments parsed from the command line.
