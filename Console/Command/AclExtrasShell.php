@@ -12,7 +12,7 @@
  * @author Mark Story <mark@mark-story.com>
  * @license http://www.opensource.org/licenses/mit-license.php The MIT License
  */
-App::uses('Shell', 'Console');
+App::uses('AppShell', 'Console/Command');
 App::uses('AclExtras', 'AclExtras.Lib');
 
 /**
@@ -21,7 +21,7 @@ App::uses('AclExtras', 'AclExtras.Lib');
  * @package		acl_extras
  * @subpackage	acl_extras.Console.Command
  */
-class AclExtrasShell extends Shell {
+class AclExtrasShell extends AppShell {
 
 /**
  * Contains arguments parsed from the command line.
